@@ -6,19 +6,19 @@
 
 1. **SPDConv (Space-to-Depth Convolution)**: 
    在主干网络中替换传统的步长卷积和池化层，将空间信息整合到通道维度，避免小缺陷特征在下采样和深层网络中丢失。
-2. **WIoU-v3 损失函数**: 
+1. **WIoU-v3 损失函数**: 
    引入动态非单调聚焦机制，根据训练动态调整梯度分配，优先优化高质量样本，抑制低质量样本（噪声标注）的负面影响。
-3. **BiFPN (Feature Pyramid Network)**: 
+1. **BiFPN (Feature Pyramid Network)**: 
    优化了特征金字塔架构以进行跨尺度的特征融合，改善小目标的上下文语义联系。
 
 ## 项目目录结构
 
-*   `docs/`: 包含超参数调优指南 (`hyperparameter_tuning_guide.md`)。
-*   `models/`: 包含改进模块 (`SPDConv`, `FPN_PAFPN` 等) 和自定义的网络配置文件 `yolo_improved.yaml`。
-*   `utils/`: 包含 `WIoU_Loss` 损失函数和评估指标脚本。
-*   `eval/`: 包含用于毕业论文的消融实验对比图表生成脚本 (`evaluation.py`, `plotting.py`)。
-*   `datasets/`: 存放数据集 (默认需要 YOLO 格式)。
-*   `train.py` & `val.py`: 端到端的训练与验证脚本。
+* `docs/`: 包含超参数调优指南 (`hyperparameter_tuning_guide.md`)。
+* `models/`: 包含改进模块 (`SPDConv`, `FPN_PAFPN` 等) 和自定义的网络配置文件 `yolo_improved.yaml`。
+* `utils/`: 包含 `WIoU_Loss` 损失函数和评估指标脚本。
+* `eval/`: 包含用于毕业论文的消融实验对比图表生成脚本 (`evaluation.py`, `plotting.py`)。
+* `datasets/`: 存放数据集 (默认需要 YOLO 格式)。
+* `train.py` & `val.py`: 端到端的训练与验证脚本。
 
 ## 快速开始
 
@@ -27,11 +27,14 @@
 本项目使用 `uv` 进行环境管理。
 
 ```bash
-uv pip install -r pyproject.toml
+uv sync
+# or using the pip-compatible interface: `uv pip install -r pyproject.toml`
 ```
-或直接通过 pip 安装依赖 (由于 Ultralytics 库已包含绝大多数依赖)：
+
+或直接通过 pip 安装依赖：
+
 ```bash
-pip install ultralytics pandas matplotlib seaborn thop
+pip install ultralytics pandas matplotlib seaborn thop # Ultralytics 库已包含绝大多数依赖
 ```
 
 ### 2. 准备数据
@@ -41,26 +44,29 @@ pip install ultralytics pandas matplotlib seaborn thop
 
 ### 3. 模型训练
 
-使用我们改进的 `yolo_improved.yaml` 和定制的超参数开始训练：
+使用改进的 `yolo_improved.yaml` 和定制的超参数开始训练：
 
 ```bash
-python train.py --cfg models/yolo_improved.yaml --data datasets/data.yaml --epochs 100 --batch 16
+uv run train.py --cfg models/yolo_improved.yaml --data datasets/data.yaml --epochs 100 --batch 16
 ```
-*(关于如何针对你的缺陷数据集调整初始学习率和 WIoU 参数，请务必阅读 `docs/hyperparameter_tuning_guide.md`)*
+
+*(关于如何针对缺陷数据集调整初始学习率和 WIoU 参数，阅读 `docs/hyperparameter_tuning_guide.md`)*
 
 ### 4. 模型评估与测试
 
 验证训练好的模型：
+
 ```bash
-python val.py --weights runs/train/exp_improved/weights/best.pt --data datasets/data.yaml
+uv run val.py --weights runs/train/exp_improved/weights/best.pt --data datasets/data.yaml
 ```
 
 ### 5. 生成论文图表 (消融实验)
 
-当你分别训练了 `Baseline` 和加入了各个模块的模型后，修改 `eval/evaluation.py` 和 `eval/plotting.py` 中的目录路径字典，然后运行：
+当分别训练了 `Baseline` 和加入了各个模块的模型后，修改 `eval/evaluation.py` 和 `eval/plotting.py` 中的目录路径字典，然后运行：
 
 ```bash
-python eval/evaluation.py
-python eval/plotting.py
+uv run eval/evaluation.py
+uv run eval/plotting.py
 ```
+
 这将在 `eval/plots/` 目录下生成用于论文的高清收敛曲线对比图和包含 Params/FLOPs 的指标表格。
