@@ -5,9 +5,9 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 # Paths
-source_dir = Path("datasets/GC10-DET")
+source_dir = Path("GC10-DET")
 lables_dir = source_dir / "lables"
-output_dir = Path("datasets/GC10-DET_YOLO")
+output_dir = Path("GC10-DET_YOLO")
 
 # Split ratios
 TRAIN_RATIO = 0.8
