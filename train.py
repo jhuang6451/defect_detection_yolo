@@ -7,17 +7,15 @@ from ultralytics import YOLO
 def main(opt):
     """
     基础训练闭环管线。
-    利用 Ultralytics 的训练管道，但使用我们改进的 yolo_improved.yaml。
     """
     print("🚀 开始 YOLO 缺陷检测模型训练...")
 
-    # 1. 加载模型配置 (如果有预训练权重，可在此加入)
-    # 此处加载我们包含 SPDConv 等改进结构的 YAML
+    # 加载模型
+    # 如果是 .yaml，则初始化结构；如果是 .pt，则加载预训练权重
     model = YOLO(opt.cfg)
 
-    # 2. 执行训练
-    # Ultralytics 的 train 接受大量字典参数。对于小目标检测，
-    # 参考 docs/hyperparameter_tuning_guide.md 设定一些关键超参数。
+    # 执行训练
+    # 使用 os.path.abspath 确保 project 路径是绝对的，防止嵌套目录问题
     results = model.train(
         data=opt.data,
         epochs=opt.epochs,
@@ -25,26 +23,21 @@ def main(opt):
         imgsz=opt.imgsz,
         device=opt.device,
         workers=opt.workers,
-        project=opt.project,
+        project=os.path.abspath(opt.project),
         name=opt.name,
         # --- 小目标缺陷检测的关键超参数调优 ---
-        lr0=0.001,  # 较低的初始学习率
-        lrf=0.01,  # 最终学习率乘数
-        warmup_epochs=3.0,  # 预热 epochs，供 WIoU-v3 稳定动量
+        lr0=0.001,
+        lrf=0.01,
+        warmup_epochs=3.0,
         warmup_momentum=0.8,
         warmup_bias_lr=0.1,
-        # 匹配策略
-        iou=0.4,  # 测试/验证时的 NMS 阈值 (可根据情况调低)
-        # 注意: box iou_t 在 ultralytics 中较难直接通过命令行传参，
-        # 实际可能需要修改 default.yaml 或传入特定的 hyp.yaml。
-        # 数据增强 (针对小目标)
-        mosaic=1.0,  # 开启 Mosaic
-        mixup=0.0,  # 关闭 Mixup 以免混淆背景
-        copy_paste=0.1,  # 可选的 copy-paste
-        # 其他
-        patience=50,  # Early stopping patience
-        save=True,  # 保存 best.pt 和 last.pt
-        val=True,  # 训练中途进行验证
+        iou=0.4,
+        mosaic=1.0,
+        mixup=0.0,
+        copy_paste=0.1,
+        patience=50,
+        save=True,
+        val=True,
     )
 
     print(f"✅ 训练结束！模型及日志保存在: {os.path.join(opt.project, opt.name)}")
@@ -53,7 +46,7 @@ def main(opt):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="YOLO 缺陷检测模型训练脚本")
     parser.add_argument(
-        "--cfg", type=str, default="models/yolo_improved.yaml", help="模型配置文件路径"
+        "--cfg", type=str, default="models/yolo_improved.yaml", help="模型配置文件路径或预训练模型名(如 yolo11n.pt)"
     )
     parser.add_argument(
         "--data", type=str, default="datasets/data.yaml", help="数据集配置文件路径"
@@ -72,8 +65,8 @@ if __name__ == "__main__":
 
     # 为了防止路径问题，做一些简单的检查
     if not os.path.exists(opt.cfg):
-        print(f"⚠️ 警告: 模型配置文件 {opt.cfg} 不存在。")
+       print(f"⚠️ 警告: 模型配置文件 {opt.cfg} 不存在。")
     if not os.path.exists(opt.data):
-        print(f"⚠️ 警告: 数据集配置文件 {opt.data} 不存在。")
+       print(f"⚠️ 警告: 数据集配置文件 {opt.data} 不存在。")
 
     main(opt)

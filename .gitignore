@@ -15,15 +15,18 @@ wheels/
 
 # YOLO training outputs
 runs/
+*.pt
+*.cache
 
 # Evaluation outputs
 eval/plots/
 eval/*.csv
 
-# Organized datasets (populated by move/copy scripts)
-datasets/images/
-datasets/labels/
+# Datasets - Ignore all subdirectories in datasets/
+datasets/*/
+
+# Keep scripts in datasets/
+!datasets/*.py
 
 # OS files
 .DS_Store
-

@@ -3,5 +3,6 @@
 
 from .spdconv import SPDConv
 from .losses import WIoU_Loss
+from .modules.fpn_pafpn import BiFPN_Add, BiFPN_Concat
 
-__all__ = ["SPDConv", "WIoU_Loss"]
+__all__ = ["SPDConv", "WIoU_Loss", "BiFPN_Add", "BiFPN_Concat"]
