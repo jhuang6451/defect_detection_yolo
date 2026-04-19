@@ -11,6 +11,70 @@
 1. **BiFPN (Feature Pyramid Network)**: 
    优化了特征金字塔架构以进行跨尺度的特征融合，改善小目标的上下文语义联系。
 
+## 项目架构与工作流
+
+以下图表描述了数据流向、模块关系及模型训练的整体管线。
+
+### 1. 整体管线逻辑 (Flowchart)
+```mermaid
+flowchart TD
+    subgraph Data_Prep [数据准备]
+        A[GC10-DET 原数据集] -->|格式转换| B[YOLO 格式数据]
+        B -->|整理| C[(datasets/ images & labels)]
+        D[data.yaml] -.->|路径指引| C
+    end
+
+    subgraph Model_Dev [模型构建]
+        E[YOLO 基准] -->|引入| F[SPDConv 模块]
+        E -->|引入| G[WIoU-v3 损失函数]
+        F & G --> H{yolo_improved.yaml}
+    end
+
+    subgraph Execution [训练与验证]
+        H -->|加载配置| I[train.py]
+        C -->|数据输入| I
+        I -->|权重保存| J[best.pt]
+        J -->|权重加载| K[val.py]
+    end
+
+    subgraph Evaluation [结果评估]
+        K -->|mAP 统计| L[evaluation.py]
+        J -->|Params/FLOPs| L
+        I -->|Loss 曲线| M[plotting.py]
+        L -->|对比表格| N[消融实验 CSV]
+        M -->|学术图表| O[eval/plots/*.png]
+    end
+```
+
+### 2. 改进模块结构 (Class Diagram)
+```mermaid
+classDiagram
+    class nn_Module["torch.nn.Module"] { <<abstract>> }
+    class SPD { +forward(x) }
+    class SPDConv { -spd: SPD, -conv: Conv, +forward(x) }
+    class WIoU_Loss { +alpha: float, +delta: float, +forward(pred, target) }
+    
+    nn_Module <|-- SPD
+    nn_Module <|-- SPDConv
+    nn_Module <|-- WIoU_Loss
+    SPDConv *-- SPD : 包含
+```
+
+### 3. 训练损失计算流程 (Sequence Diagram)
+```mermaid
+sequenceDiagram
+    participant T as train.py
+    participant M as YOLO Model
+    participant L as WIoU_Loss (utils/loss.py)
+
+    T->>M: Forward Pass
+    M-->>T: Predictions
+    T->>L: Compute Loss
+    Note over L: 计算离群度 beta & 动态梯度权重 r
+    L-->>T: Return WIoU Loss
+    T->>T: Backward Pass & Update
+```
+
 ## 项目目录结构
 
 * `docs/`: 包含超参数调优指南 (`hyperparameter_tuning_guide.md`)。

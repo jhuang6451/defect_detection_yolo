@@ -1,3 +1,7 @@
+# AI agent files
+.agents/
+skills-lock.json
+
 # Python-generated files
 __pycache__/
 *.py[oc]
@@ -8,3 +12,18 @@ wheels/
 
 # Virtual environments
 .venv
+
+# YOLO training outputs
+runs/
+
+# Evaluation outputs
+eval/plots/
+eval/*.csv
+
+# Organized datasets (populated by move/copy scripts)
+datasets/images/
+datasets/labels/
+
+# OS files
+.DS_Store
+
