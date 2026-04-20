@@ -5,6 +5,7 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class BiFPN_Add(nn.Module):
@@ -27,7 +28,6 @@ class BiFPN_Add(nn.Module):
         self.w = nn.Parameter(
             torch.ones(len(in_channels), dtype=torch.float32), requires_grad=True
         )
-        self.relu = nn.ReLU()
 
     def forward(self, x: list) -> torch.Tensor:
         """
@@ -39,7 +39,7 @@ class BiFPN_Add(nn.Module):
         Returns:
             torch.Tensor: 融合后的特征图。
         """
-        w = self.relu(self.w)
+        w = F.relu(self.w)
         weight_sum = torch.sum(w) + self.epsilon
         # 归一化权重
         out = sum([w[i] * x[i] for i in range(len(x))]) / weight_sum
@@ -68,7 +68,6 @@ class BiFPN_Concat(nn.Module):
         self.w = nn.Parameter(
             torch.ones(num_inputs, dtype=torch.float32), requires_grad=True
         )
-        self.relu = nn.ReLU()
 
     def forward(self, x: list) -> torch.Tensor:
         """
@@ -80,7 +79,7 @@ class BiFPN_Concat(nn.Module):
         Returns:
             torch.Tensor: 拼接后的张量。
         """
-        w = self.relu(self.w)
+        w = F.relu(self.w)
         weight_sum = torch.sum(w) + self.epsilon
         # 归一化权重并与对应张量相乘，最后拼接
         weighted_x = [w[i] * x[i] / weight_sum for i in range(len(x))]

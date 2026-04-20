@@ -4,14 +4,11 @@ import argparse
 from ultralytics import YOLO
 
 # 导入 models 包并将其注册到 Ultralytics 的内部命名空间中
-# YOLOv8 的 parse_model 会在 ultralytics.nn.tasks 的 globals() 中查找 YAML 里的模块名
 import ultralytics.nn.tasks as tasks
 import models
 
-# 注册自定义模块
+# 安全的注册基础自定义模块
 tasks.GhostConv = models.SPDConv
-tasks.BiFPN_Add = models.BiFPN_Add
-tasks.BiFPN_Concat = models.BiFPN_Concat
 tasks.WIoU_Loss = models.WIoU_Loss
 
 
@@ -19,14 +16,23 @@ def main(opt):
     """
     基础训练闭环管线。
     """
-    print("🚀 开始 YOLO 缺陷检测模型训练...")
+    print(f"🚀 开始 YOLO 缺陷检测模型训练... (配置: {opt.cfg})")
+
+    # 动态路由机制：保护对照组的纯净性
+    # 只有当配置文件名中明确包含 'bifpn' 时，才将系统的 Concat 替换为 BiFPN_Concat
+    cfg_name_lower = os.path.basename(opt.cfg).lower()
+    if "bifpn" in cfg_name_lower:
+        print("🛠️ 探测到 BiFPN 配置，已将底层 Concat 动态替换为 BiFPN_Concat。")
+        tasks.Concat = models.BiFPN_Concat
+    else:
+        # 如果是跑 baseline 或者 仅 spdconv 的实验，必须确保 Concat 是原生的
+        import ultralytics.nn.modules.conv as conv
+        tasks.Concat = conv.Concat
 
     # 加载模型
-    # 如果是 .yaml，则初始化结构；如果是 .pt，则加载预训练权重
     model = YOLO(opt.cfg)
 
     # 执行训练
-    # 使用 os.path.abspath 确保 project 路径是绝对的，防止嵌套目录问题
     results = model.train(
         data=opt.data,
         epochs=opt.epochs,
@@ -57,7 +63,7 @@ def main(opt):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="YOLO 缺陷检测模型训练脚本")
     parser.add_argument(
-        "--cfg", type=str, default="models/yolo_improved.yaml", help="模型配置文件路径或预训练模型名(如 yolo11n.pt)"
+        "--cfg", type=str, default="models/yolo_improved.yaml", help="模型配置文件路径或预训练模型名"
     )
     parser.add_argument(
         "--data", type=str, default="datasets/data.yaml", help="数据集配置文件路径"
@@ -75,7 +81,7 @@ if __name__ == "__main__":
     opt = parser.parse_args()
 
     # 为了防止路径问题，做一些简单的检查
-    if not os.path.exists(opt.cfg):
+    if not os.path.exists(opt.cfg) and not opt.cfg.endswith('.pt'):
        print(f"⚠️ 警告: 模型配置文件 {opt.cfg} 不存在。")
     if not os.path.exists(opt.data):
        print(f"⚠️ 警告: 数据集配置文件 {opt.data} 不存在。")
