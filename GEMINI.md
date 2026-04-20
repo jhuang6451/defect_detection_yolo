@@ -37,9 +37,9 @@ uv run datasets/convert_voc_to_yolo.py
 ```
 
 ### Training
-Train the improved model using the custom configuration:
+Train the improved model using the custom configuration (example):
 ```bash
-uv run train.py --cfg models/yolo_improved.yaml --data datasets/data.yaml --epochs 100 --batch 16
+uv run train.py --cfg models/yolo_spdconv_only.yaml --data datasets/GC10-DET-YOLO/data.yaml --epochs 100 --batch 16 --name 03_exp_spdconv
 ```
 
 ### Validation

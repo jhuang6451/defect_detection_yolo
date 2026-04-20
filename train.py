@@ -3,6 +3,17 @@ import sys
 import argparse
 from ultralytics import YOLO
 
+# 导入 models 包并将其注册到 Ultralytics 的内部命名空间中
+# YOLOv8 的 parse_model 会在 ultralytics.nn.tasks 的 globals() 中查找 YAML 里的模块名
+import ultralytics.nn.tasks as tasks
+import models
+
+# 注册自定义模块
+tasks.GhostConv = models.SPDConv
+tasks.BiFPN_Add = models.BiFPN_Add
+tasks.BiFPN_Concat = models.BiFPN_Concat
+tasks.WIoU_Loss = models.WIoU_Loss
+
 
 def main(opt):
     """

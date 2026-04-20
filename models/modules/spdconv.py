@@ -57,6 +57,7 @@ class SPDConv(nn.Module):
         s: int = 1,
         p: int = None,
         g: int = 1,
+        d: int = 1,
         act: bool = True,
     ):
         """
@@ -69,12 +70,14 @@ class SPDConv(nn.Module):
             s (int): 卷积步长，默认 1 (由于 SPD 已执行下采样，这里通常为 1)。
             p (int): 填充大小。
             g (int): 分组卷积参数。
+            d (int): 空洞卷积参数。
             act (bool): 是否使用激活函数。
         """
         super().__init__()
         self.spd = SPD()
+        print("SPDConv Initialized!")
         # 注意：SPD 转换后通道数变为 c1 * 4，因此后续卷积的输入通道需对应调整
-        self.conv = Conv(c1 * 4, c2, k, s, p, g, act)
+        self.conv = Conv(c1 * 4, c2, k, s, p, g, d, act)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -87,3 +90,4 @@ class SPDConv(nn.Module):
             torch.Tensor: 经过 SPD 和 Conv 后的张量。
         """
         return self.conv(self.spd(x))
+
