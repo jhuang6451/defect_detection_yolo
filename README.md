@@ -23,7 +23,7 @@ flowchart TD
     end
 
     subgraph Core_Model [算法改进层]
-        E[YOLO 基准] -->|Backbone 替换| F[SPDConv 保真下采样]
+        E[YOLO 基准] -->|Backbone 替换| F[SPDConv 下采样]
         F -->|Neck 强化| G[BiFPN 加权特征融合]
         G -->|Loss 升级| H[WIoU-v3 动态聚焦损失]
         F & G & H --> I{yolo26n_spdconv_bifpn.yaml}
@@ -120,5 +120,7 @@ uv sync  # 同步环境
 uv run eval/evaluation.py
 # 绘制所有实验的对比曲线 (Loss, mAP)
 uv run eval/plotting.py
+# 一键提取所有实验的核心混淆矩阵与 PR 曲线
+uv run utils/thesis_helper.py
 ```
 所有分析结果将统一保存在 `eval/output/` 目录下。
