@@ -1,6 +1,7 @@
 # AI agent files
 .agents/
 skills-lock.json
+.tmp
 
 # Python-generated files
 __pycache__/
@@ -19,11 +20,11 @@ runs/
 *.cache
 
 # Evaluation outputs
-eval/plots/
-eval/*.csv
+eval/output/
 
-# Datasets - Ignore all subdirectories in datasets/
+# Datasets - Ignore all subdirectories and archives in datasets/
 datasets/*/
+datasets/*.tar.gz
 
 # Keep scripts in datasets/
 !datasets/*.py

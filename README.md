@@ -1,136 +1,124 @@
 # 基于改进 YOLO 算法的零部件缺陷视觉检测方法研究
 
-本项目是《基于改进 YOLO 算法的零部件缺陷视觉检测方法研究》的毕业设计源码库。本研究致力于解决工业零部件（如钢带、绝缘子等）质量检测中存在的小目标缺陷特征易丢失、数据集样本不平衡以及噪声标注干扰等问题。
+本项目是《基于改进 YOLO 算法的零部件缺陷视觉检测方法研究》的毕业设计配套源码库。本项目针对工业场景下小目标缺陷易漏检、数据不平衡等痛点，提出了基于 **SPDConv**、**BiFPN** 与 **WIoU-v3** 的增强型检测架构。
 
-## 主要改进点
+---
 
-1. **SPDConv (Space-to-Depth Convolution)**: 
-   在主干网络中替换传统的步长卷积和池化层，将空间信息整合到通道维度，避免小缺陷特征在下采样和深层网络中丢失。
-1. **WIoU-v3 损失函数**: 
-   引入动态非单调聚焦机制，根据训练动态调整梯度分配，优先优化高质量样本，抑制低质量样本（噪声标注）的负面影响。
-1. **BiFPN (Feature Pyramid Network)**: 
-   优化了特征金字塔架构以进行跨尺度的特征融合，改善小目标的上下文语义联系。
+## 🚀 核心改进逻辑 (Architectural Logic)
 
-## 项目架构与工作流
+1.  **物理保真 (SPDConv)**: 引入 Space-to-Depth 机制替代跨步卷积，在下采样时保留微小目标的像素级特征。
+2.  **尺度裁判 (BiFPN)**: 采用带学习权重的加权特征融合，自适应对齐多尺度缺陷的语义与位置信息。
+3.  **动态降噪 (WIoU-v3)**: 通过非单调聚焦机制抑制低质量标注（脏数据）梯度，平衡 Recall 与 Precision。
 
-以下图表描述了数据流向、模块关系及模型训练的整体管线。
+---
 
-### 1. 整体管线逻辑 (Flowchart)
+## 📊 项目逻辑架构 (System Architecture)
+
+### 1. 深度检测管线逻辑 (Workflow)
 ```mermaid
 flowchart TD
-    subgraph Data_Prep [数据准备]
-        A[GC10-DET 原数据集] -->|格式转换| B[YOLO 格式数据]
-        B -->|整理| C[(datasets/ images & labels)]
-        D[data.yaml] -.->|路径指引| C
+    subgraph Data_Hub [数据驱动层]
+        A[GC10-DET 原数据集] -->|格式标准化| B[YOLO 格式数据]
+        B -->|漏检感知 Copy-Paste| C[增强数据集]
     end
 
-    subgraph Model_Dev [模型构建]
-        E[YOLO 基准] -->|引入| F[SPDConv 模块]
-        E -->|引入| G[WIoU-v3 损失函数]
-        F & G --> H{yolo_improved.yaml}
+    subgraph Core_Model [算法改进层]
+        E[YOLO 基准] -->|Backbone 替换| F[SPDConv 保真下采样]
+        F -->|Neck 强化| G[BiFPN 加权特征融合]
+        G -->|Loss 升级| H[WIoU-v3 动态聚焦损失]
+        F & G & H --> I{yolo26n_spdconv_bifpn.yaml}
     end
 
-    subgraph Execution [训练与验证]
-        H -->|加载配置| I[train.py]
-        C -->|数据输入| I
-        I -->|权重保存| J[best.pt]
-        J -->|权重加载| K[val.py]
+    subgraph Optimization [训练调优层]
+        I -->|动态补丁| J[train.py]
+        C -->|训练输入| J
+        J -->|网格搜索| K[参数敏感性分析]
+        K -->|最优参数锁定| J
+        J -->|权重保存| L[best.pt]
     end
 
-    subgraph Evaluation [结果评估]
-        K -->|mAP 统计| L[evaluation.py]
-        J -->|Params/FLOPs| L
-        I -->|Loss 曲线| M[plotting.py]
-        L -->|对比表格| N[消融实验 CSV]
-        M -->|学术图表| O[eval/plots/*.png]
+    subgraph Academic_Output [学术产出层]
+        L -->|多维对比| M[evaluation.py & plotting.py]
+        M --> P[[学术论文消融实验图表]]
     end
 ```
 
-### 2. 改进模块结构 (Class Diagram)
-```mermaid
-classDiagram
-    class nn_Module["torch.nn.Module"] { <<abstract>> }
-    class SPD { +forward(x) }
-    class SPDConv { -spd: SPD, -conv: Conv, +forward(x) }
-    class WIoU_Loss { +alpha: float, +delta: float, +forward(pred, target) }
-    
-    nn_Module <|-- SPD
-    nn_Module <|-- SPDConv
-    nn_Module <|-- WIoU_Loss
-    SPDConv *-- SPD : 包含
+---
+
+## 📂 目录结构与脚本说明
+
+| 文件夹/脚本 | 用途说明 |
+| :--- | :--- |
+| **`models/`** | **核心架构定义目录**。 |
+| ├── `modules/` | 包含 `spdconv.py` (下采样)、`fpn_pafpn.py` (BiFPN) 等改进算子。 |
+| └── `yolo26n_*.yaml` | 不同的模型网络配置文件，定义了层级拓扑结构。 |
+| **`utils/`** | **辅助工具包**。 |
+| ├── `loss.py` | `WIoU_Loss` 的核心算法实现。 |
+| ├── `metrics.py` | 用于计算 Params 和 FLOPs 的评估工具。 |
+| └── `grid_search.py` | 自动化参数敏感性分析脚本。 |
+| **`datasets/`** | **数据处理目录**。 |
+| ├── `convert_voc_to_yolo.py` | 将原始 VOC XML 转化为归一化的 YOLO TXT 格式，并修复拼写错误。 |
+| ├── `augment_dataset.py` | 针对罕见/漏检类别的专项增强脚本 (Copy-Paste 策略)。 |
+| └── `visualize_aug.py` | 增强效果可视化预览工具。 |
+| **`eval/`** | **评估产出目录**。 |
+| ├── `evaluation.py` | 自动扫描 `runs/` 目录，生成 mAP、Params、FLOPs 的对比 CSV。 |
+| ├── `plotting.py` | 绘制学术级的 Loss 收敛曲线和 mAP 演进曲线对比图。 |
+| └── `output/` | (Ignored) 存放生成的对比报表与高清图表。 |
+| **`train.py`** | **主训练入口**。支持 WIoU 动态注入、动态路由及超参 CLI 覆盖。 |
+| **`val.py`** | **主验证脚本**。用于在测试集上运行全面评估。 |
+
+---
+
+## 📦 数据集说明 (Dataset & Augmentation)
+
+### 1. GC10-DET 由来
+GC10-DET 是由北京科技大学收集的大型钢铁表面缺陷数据集，包含 10 类典型工业缺陷。原始数据采用 VOC 格式，子目录结构复杂且存在部分中文/错别字。
+
+### 2. 获取方式
+本项目使用的 YOLO 格式标准化数据集已发布至 Google Drive：
+🔗 [GC10-DET-YOLO.tar.gz](https://drive.google.com/file/d/1fQSzI0SICm0y7_hUZDpxT8dZwLw85XSE/view?usp=sharing)
+下载后解压至 `datasets/` 目录，确保结构如下：
+```text
+datasets/GC10-DET-YOLO/
+├── images/ (train/val/test)
+├── labels/ (train/val/test)
+└── data.yaml
 ```
 
-### 3. 训练损失计算流程 (Sequence Diagram)
-```mermaid
-sequenceDiagram
-    participant T as train.py
-    participant M as YOLO Model
-    participant L as WIoU_Loss (utils/loss.py)
+### 2. 数据处理与增强脚本
+*   **`datasets/convert_voc_to_yolo.py`**: 如果你持有的是 VOC XML 原数据，运行此定制脚本进行转换。它内置了拼写错误自动修复逻辑。
+*   **`datasets/augment_dataset.py`**: **数据集增强脚本**。为了因对数据集样本数量差异过大、部分缺陷类别样本多样性低/样本数量过少。它采用“漏检感知 Copy-Paste”策略，通过动态监测类别实例数，将高漏检风险的小样本类别（如轧坑、折痕）自动合成到不同背景中，大幅缓解长尾分布问题。
+    ```bash
+    uv run datasets/augment_dataset.py
+    ```
 
-    T->>M: Forward Pass
-    M-->>T: Predictions
-    T->>L: Compute Loss
-    Note over L: 计算离群度 beta & 动态梯度权重 r
-    L-->>T: Return WIoU Loss
-    T->>T: Backward Pass & Update
-```
+---
 
-## 项目目录结构
+## ⚡ 快速开始 (Quick Start Guide)
 
-* `docs/`: 包含超参数调优指南 (`hyperparameter_tuning_guide.md`)。
-* `models/`: 包含改进模块 (`SPDConv`, `FPN_PAFPN` 等) 和自定义的网络配置文件 `yolo_improved.yaml`。
-* `utils/`: 包含 `WIoU_Loss` 损失函数和评估指标脚本。
-* `eval/`: 包含用于毕业论文的消融实验对比图表生成脚本 (`evaluation.py`, `plotting.py`)。
-* `datasets/`: 存放数据集 (默认需要 YOLO 格式)。
-* `train.py` & `val.py`: 端到端的训练与验证脚本。
-
-## 快速开始
-
-### 1. 环境准备
-
-本项目使用 `uv` 进行环境管理。
-
+### 1. 环境构建与数据部署
 ```bash
-uv sync
-# or using the pip-compatible interface: `uv pip install -r pyproject.toml`
+git clone https://github.com/your-username/defect_detection_yolo.git
+cd defect_detection_yolo
+uv sync  # 同步环境
+# [下载数据集并解压到 datasets/ 目录下]
 ```
 
-或直接通过 pip 安装依赖：
+### 2. 消融实验命令示例
+| 实验阶段 | 对应命令 |
+| :--- | :--- |
+| **Baseline** | `uv run train.py --cfg models/yolo26n.pt --name 01_exp_baseline` |
+| **+ SPDConv** | `uv run train.py --cfg models/yolo26n_spdconv_only.yaml --name 03_exp_spdconv` |
+| **+ BiFPN** | `uv run train.py --cfg models/yolo26n_spdconv_bifpn.yaml --name 04_exp_spdconv_bifpn` |
+| **+ WIoU-v3 (采用 Grid Search 最佳参数)** | `uv run train.py --cfg models/yolo26n_spdconv_bifpn.yaml --wiou --wiou_alpha 1.6 --wiou_delta 2.5 --name 05_exp_final_original` |
+| **成品模型 (SPDConv + BiFPN + WIoU-v3 架构优化、增强版数据集)** | `uv run train.py --cfg models/yolo26n_spdconv_bifpn.yaml --data datasets/GC10-DET-YOLO-AUGMENTED/data.yaml --epochs 150 --wiou --wiou_alpha 1.6 --wiou_delta 2.5 --name final_exp_augmented` |
 
+### 3. 一键结果分析 (Auto-Analysis)
+脚本将自动扫描 `runs/train/` 下的所有子目录（训练结果）：
 ```bash
-pip install ultralytics pandas matplotlib seaborn thop # Ultralytics 库已包含绝大多数依赖
-```
-
-### 2. 准备数据
-
-将你的数据集组织为标准的 YOLO 格式，并修改 `datasets/data.yaml` 文件中的路径和类别数。
-如果有 VOC 格式数据，可以使用根目录下的 `convert_voc_to_yolo.py` 转换。
-
-### 3. 模型训练
-
-使用改进的 `yolo_improved.yaml` 和定制的超参数开始训练：
-
-```bash
-uv run train.py --cfg models/yolo_improved.yaml --data datasets/data.yaml --epochs 100 --batch 16
-```
-
-*(关于如何针对缺陷数据集调整初始学习率和 WIoU 参数，阅读 `docs/hyperparameter_tuning_guide.md`)*
-
-### 4. 模型评估与测试
-
-验证训练好的模型：
-
-```bash
-uv run val.py --weights runs/train/exp_improved/weights/best.pt --data datasets/data.yaml
-```
-
-### 5. 生成论文图表 (消融实验)
-
-当分别训练了 `Baseline` 和加入了各个模块的模型后，修改 `eval/evaluation.py` 和 `eval/plotting.py` 中的目录路径字典，然后运行：
-
-```bash
+# 生成指标对比表 (mAP, Params, FLOPs)
 uv run eval/evaluation.py
+# 绘制所有实验的对比曲线 (Loss, mAP)
 uv run eval/plotting.py
 ```
-
-这将在 `eval/plots/` 目录下生成用于论文的高清收敛曲线对比图和包含 Params/FLOPs 的指标表格。
+所有分析结果将统一保存在 `eval/output/` 目录下。
