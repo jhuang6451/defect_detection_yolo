@@ -45,7 +45,7 @@ flowchart TD
 
 ---
 
-## 📂 目录结构与脚本说明
+## 📂 目录结构与脚本
 
 | 文件夹/脚本 | 用途说明 |
 | :--- | :--- |
@@ -69,9 +69,9 @@ flowchart TD
 
 ---
 
-## 📦 数据集说明 (Dataset & Augmentation)
+## 📦 数据集
 
-### 1. GC10-DET 由来
+### 1. GC10-DET 数据集
 GC10-DET 是由北京科技大学收集的大型钢铁表面缺陷数据集，包含 10 类典型工业缺陷。原始数据采用 VOC 格式，子目录结构复杂且存在部分中文/错别字。
 
 ### 2. 获取方式
@@ -94,7 +94,7 @@ datasets/GC10-DET-YOLO/
 
 ---
 
-## ⚡ 快速开始 (Quick Start Guide)
+## ⚡ 快速开始
 
 ### 1. 环境构建与数据部署
 ```bash
@@ -107,13 +107,13 @@ uv sync  # 同步环境
 ### 2. 消融实验命令示例
 | 实验阶段 | 对应命令 |
 | :--- | :--- |
-| **Baseline** | `uv run train.py --cfg models/yolo26n.pt --name 01_exp_baseline` |
+| **Baseline** | `uv run train.py --cfg yolo26n.pt --name 01_exp_baseline` |
 | **+ SPDConv** | `uv run train.py --cfg models/yolo26n_spdconv_only.yaml --name 03_exp_spdconv` |
 | **+ BiFPN** | `uv run train.py --cfg models/yolo26n_spdconv_bifpn.yaml --name 04_exp_spdconv_bifpn` |
 | **+ WIoU-v3 (采用 Grid Search 最佳参数)** | `uv run train.py --cfg models/yolo26n_spdconv_bifpn.yaml --wiou --wiou_alpha 1.6 --wiou_delta 2.5 --name 05_exp_final_original` |
-| **成品模型 (SPDConv + BiFPN + WIoU-v3 架构优化、增强版数据集)** | `uv run train.py --cfg models/yolo26n_spdconv_bifpn.yaml --data datasets/GC10-DET-YOLO-AUGMENTED/data.yaml --epochs 150 --wiou --wiou_alpha 1.6 --wiou_delta 2.5 --name final_exp_augmented` |
+| **SPDConv + BiFPN + WIoU-v3 架构优化、增强版数据集** | `uv run train.py --cfg models/yolo26n_spdconv_bifpn.yaml --data datasets/GC10-DET-YOLO-AUGMENTED/data.yaml --epochs 150 --wiou --wiou_alpha 1.6 --wiou_delta 2.5 --name final_exp_augmented` |
 
-### 3. 一键结果分析 (Auto-Analysis)
+### 3. 结果分析
 脚本将自动扫描 `runs/train/` 下的所有子目录（训练结果）：
 ```bash
 # 生成指标对比表 (mAP, Params, FLOPs)
