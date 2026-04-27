@@ -1,12 +1,10 @@
-# YOLO-SPDConv-BiFPN 配置文件 (完全体)
+# YOLO-SPDConv-BiFPN 配置文件 (完全体 - Large 版本)
 # 在 Backbone 引入 SPDConv，在 Head 中使用 BiFPN_Concat
 
 # Parameters
 nc: 10 # GC10-DET 类别数
-
-
 scales:
-  n: [0.33, 0.25, 1024]
+  l: [1.00, 1.00, 512] # l 模型配置: [depth_multiple, width_multiple, max_channels]
 
 # Backbone (使用 SPDConv 替换步长卷积，此处用 GhostConv 绕过框架限制)
 backbone:

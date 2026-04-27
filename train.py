@@ -110,6 +110,7 @@ def main(opt):
         lr0=opt.lr0,
         lrf=opt.lrf,
         warmup_epochs=opt.warmup_epochs,
+        weight_decay=opt.weight_decay,
         warmup_momentum=0.8,
         warmup_bias_lr=0.1,
         iou=0.4,
@@ -146,6 +147,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr0", type=float, default=0.001, help="初始学习率")
     parser.add_argument("--lrf", type=float, default=0.01, help="最终学习率因子 (lr0 * lrf)")
     parser.add_argument("--warmup_epochs", type=float, default=3.0, help="预热轮次")
+    parser.add_argument("--weight_decay", type=float, default=0.0005, help="权重衰减 (L2 正则化)")
     
     # WIoU 相关参数
     parser.add_argument("--wiou", action="store_true", help="是否使用 WIoU-v3 损失函数")
